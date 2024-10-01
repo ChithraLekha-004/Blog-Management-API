@@ -15,10 +15,10 @@ def blogApi(request,key=None):
             
             comments=list(Comment.objects.filter(post=post).values('id','commenter','content'))
             print(comments)
-            # breakpoint()
             responseData={
                 'title': post.title,
                 'content': post.content,
+                
                 'author': post.author.name,
                 'created_at': post.created_at,
                 "comments":comments
@@ -99,6 +99,16 @@ def blogApi(request,key=None):
 @csrf_exempt
 def comments(request,key,comment_id=None):
         print(comment_id)
+        if request.method=='GET':
+            try:
+                comments=list(Comment.objects.filter(post_id=key).values('id','commenter','content'))
+                if not comments:
+                    return JsonResponse({"message":"no comments yet"},safe=False)
+                else:
+                    return JsonResponse(comments,
+                                    safe=False)
+            except Comment.DoesNotExist:
+                return JsonResponse({'error': 'id is not found'}, status=404)
         if request.method=="POST":
             try:
                 data = json.loads(request.body)
@@ -130,8 +140,8 @@ def comments(request,key,comment_id=None):
         if request.method=="PUT":
             try:
                 data = json.loads(request.body)
-                commenter = data['commenter']
-                content = data['content']
+                commenter = data.get('commenter')
+                content = data.get('content')
                 comment = Comment.objects.get(id=comment_id, post_id=key)
                 if commenter:
                     comment.commenter=commenter
